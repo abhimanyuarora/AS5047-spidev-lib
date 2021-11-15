@@ -11,7 +11,7 @@ class AS5047 {
         int m_spifd;
         bool m_open;
 
-        uint32_t speed_;
+        uint32_t speed_ = 100000;
 
         const uint8_t numSamples_zero = 10;
         uint16_t zeroOffset = 0;
@@ -24,8 +24,12 @@ class AS5047 {
         bool readSanityCheck(uint16_t msg);
 
     public:
+        AS5047();
         AS5047(const char* p_spidev, uint32_t speed=100000);
         ~AS5047();
+
+        void setPort(const char* p_spidev);
+        void setSpeed(uint32_t speed);
 
         bool begin();
 

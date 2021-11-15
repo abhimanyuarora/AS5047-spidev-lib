@@ -9,6 +9,11 @@
 #include <linux/spi/spidev.h>
 
 #include <cstdio>
+#include <stdexcept>
+
+AS5047::AS5047() {
+    m_open = false;
+}
 
 AS5047::AS5047(const char* p_spidev, uint32_t speed) {
     m_spidev = NULL;
@@ -28,6 +33,31 @@ AS5047::~AS5047() {
     }
     if (m_open)
         close(m_spifd);
+}
+
+void AS5047::setPort(const char* p_spidev) {
+    if (m_open) {
+        throw std::runtime_error("SPI Port was already opened. setPort before begin()");
+    }
+    m_spidev = NULL;
+    if (p_spidev != NULL ) {
+        m_spidev = (char *) malloc(strlen(p_spidev)+1);
+        if (m_spidev != NULL) 
+            strcpy(m_spidev,p_spidev);
+    }
+
+    // printf("PORT: %s", m_spidev);
+}
+
+void AS5047::setSpeed(uint32_t speed) {
+    speed_ = speed;
+    if (m_open) {
+        /* Set SPI speed*/
+        if (ioctl(m_spifd, SPI_IOC_WR_MAX_SPEED_HZ, &speed_) < 0) {
+            close(m_spifd);
+            m_open = false;
+        }
+    }
 }
 
 bool AS5047::begin() {
@@ -92,8 +122,9 @@ uint16_t AS5047::readAngle() {
 
 uint16_t AS5047::getRelAngle() {
     int32_t temp = readAngle()-zeroOffset;
-    if (temp < 0) return 16383 + temp;
-    else return temp;
+    if (temp < 0) temp = 16383 + temp;
+    
+    return temp;
 }
 
 void AS5047::softZero() {
